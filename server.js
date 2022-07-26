@@ -3,6 +3,8 @@ const fs = require('fs');
 const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const cTable = require('console.table');
+//Query functions
+const Employee = require('./Employee');
 
 // Connect to database
 const db = mysql.createConnection(
@@ -23,8 +25,27 @@ const mainMenu = [
         type: 'list',
         name: 'mainMenu',
         message: 'What would you like to do?',
-        choice: ['Add Employee', 'Uppdate Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
+        choices: ['Add Employee', 'Uppdate Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
     }
+]
+const employeeQuestions = [
+    {
+        type: 'input',
+        name: 'employeeFirstName',
+        message: "What is the employee's first name?"
+    },
+    {
+        type: 'input',
+        name: 'employeeLastName',
+        message: "What is the employee's last name?",
+    },
+    {
+        type: 'list',
+        name: 'employeeRole',
+        messaeg: "What is the employee's role?",
+        choices: ['Sales Lead','Salesperson','Lead Engineer','Software Engineer','Account Manager','Accountant','Legal Team Lead','Lawyer','Customer Service','Sales Lead','Salesperson','Lead Engineer']
+    }
+    
 ]
 
 // A function to initialize the app
@@ -56,5 +77,12 @@ function init() {
         })
 }
 
+//A function for the 'add employee' promt
+function addEmployee(){
+    inquirer.prompt(employeeQuestions)
+    .then((res) => {
+
+    })
+}
 // Function call to initialize app
 init();
