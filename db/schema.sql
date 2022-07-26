@@ -1,14 +1,14 @@
-CREATE DATABASE employee_db;
+-- CREATE DATABASE employee_db;
 
 USE employee_db;
 
 CREATE TABLE department (
-    id INT PRIMARY  KEY,
+    id INT AUTO_INCREMENT PRIMARY  KEY,
     dep_name VARCHAR(30)
 );
 
 CREATE TABLE emp_role (
-    id INT PRIMARY KEY,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(30),
     salary DECIMAL,
     department_id INT,
