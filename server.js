@@ -4,20 +4,20 @@ const inquirer = require('inquirer');
 const mysql = require('mysql2');
 const cTable = require('console.table');
 //Query functions
-const Employee = require('./Employee');
+const Employee = require('./lib/Employee');
 
 // Connect to database
 const db = mysql.createConnection(
     {
-      host: 'localhost',
-      // MySQL Username
-      user: 'root',
-      // TODO: Add MySQL Password
-      password: 'root123',
-      database: 'employee_db'
+        host: 'localhost',
+        // MySQL Username
+        user: 'root',
+        // TODO: Add MySQL Password
+        password: 'root123',
+        database: 'employee_db'
     },
     console.log(`Connected to the employee_db database.`)
-  );
+);
 
 // Array of questions
 const mainMenu = [
@@ -28,6 +28,8 @@ const mainMenu = [
         choices: ['Add Employee', 'Uppdate Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
     }
 ]
+
+var roleChoices = [];
 const employeeQuestions = [
     {
         type: 'input',
@@ -43,9 +45,31 @@ const employeeQuestions = [
         type: 'list',
         name: 'employeeRole',
         messaeg: "What is the employee's role?",
-        choices: ['Sales Lead','Salesperson','Lead Engineer','Software Engineer','Account Manager','Accountant','Legal Team Lead','Lawyer','Customer Service','Sales Lead','Salesperson','Lead Engineer']
+        choices: roleChoices
+    },
+    {
+        type: 'list',
+        name: 'employeeManager',
+        message: "Who is the employee's manager?",
+        //need to update choices with queries
+        choices: ['John Doe', 'Mike Chan', 'Ashley Rodriguez', 'Kevin Tupik', 'Kunal Singh', 'Malia Brown']
     }
-    
+]
+const updateRoleQuestions = [
+    {
+        type: 'list',
+        name: 'whichEmployee',
+        message: "Which employee's role would you like to update?",
+        //need to update choices with queries
+        choices: []
+    },
+    {
+        type: 'list',
+        name: 'whichRole',
+        message: "Which role do you want to assign the selected employee?",
+        //need to update choices with queries
+        choices: []
+    }
 ]
 
 // A function to initialize the app
@@ -55,12 +79,12 @@ function init() {
 
     inquirer.prompt(mainMenu)
         .then((res) => {
-            switch (res.mainMenu){
+            switch (res.mainMenu) {
                 case 'Add Employee':
-                    addEmployee()
+                    promptEmployee()
                     break;
                 case 'Update Employee Role':
-                    updateRole()
+                    promptUpdateRole()
                     break;
                 case 'View All Roles':
                     viewRole()
@@ -72,17 +96,33 @@ function init() {
                     viewDepartment()
                     break;
                 case 'Add Department':
-                    addDepartment()              
+                    addDepartment()
             }
         })
 }
 
 //A function for the 'add employee' promt
-function addEmployee(){
-    inquirer.prompt(employeeQuestions)
-    .then((res) => {
+function promptEmployee() {
+    inquirer.prompt(employeeQuestions, db.query('SELECT title FROM emp_role;', function (err, results) {
+    
+            results.map(getRole);
 
-    })
+            function getRole(role) {
+                roleChoices.push(role.title);
+            }
+        }))
+        .then((res) => {
+            const employee = new Employee(res.employeeFirstName, res.employeeLastName, res.employeeRole, res.employeeManager);
+            employee.addEmployee();
+        })
+}
+
+//A function for the 'Update Employee Role' prompt
+function promptUpdateRole() {
+    inquirer.prompt(updateRoleQuestions)
+        .then((res) => {
+
+        })
 }
 // Function call to initialize app
 init();
