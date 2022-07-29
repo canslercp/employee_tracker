@@ -5,6 +5,9 @@ const mysql = require('mysql2');
 const cTable = require('console.table');
 //Query functions
 const Employee = require('./lib/Employee');
+const Role = require('./lib/Role')
+const Department = require('./lib/Department')
+
 
 // Connect to database
 const db = mysql.createConnection(
@@ -12,24 +15,70 @@ const db = mysql.createConnection(
         host: 'localhost',
         // MySQL Username
         user: 'root',
-        // TODO: Add MySQL Password
+        // Add MySQL Password
         password: 'root123',
         database: 'employee_db'
     },
-    console.log(`Connected to the employee_db database.`)
-);
+);  
 
-// Array of questions
+//Function for employeeRole dropdown and manager dropdown
+var roleChoices = [];
+var managerChoices = [];
+var employeeChoices = [];
+var departmentChoices = [];
+
+function roleChoicesFunc() {
+    db.query('SELECT title FROM emp_role;', function (err, results) {
+        results.map(getRole);
+
+        function getRole(role) {
+            roleChoices.push(role.title);
+        }
+    })
+}
+function managerChoicesFunc() {
+    db.query('SELECT first_name, last_name, manager_id FROM employee WHERE manager_id IS NULL;', function (err, results) {
+        // SELECT CONCAT(first_name," ",last_name) FROM employee WHERE manager_id = NULL;
+        results.map(getManager);
+
+        function getManager(manager) {
+            managerChoices.push([manager.first_name, manager.last_name].join(" "))
+        }
+    })
+}
+function employeeChoicesFunc() {
+    db.query('SELECT first_name,last_name FROM employee;', function (err, results) {
+        results.map(getEmployee);
+
+        function getEmployee(employee) {
+            employeeChoices.push([employee.first_name, employee.last_name].join(" "))
+        }
+    })
+}
+function departmentChoicesFunc() {
+    db.query('SELECT dep_name FROM department', function (err, results) {
+        results.map(getDepartment);
+
+        function getDepartment(department) {
+            departmentChoices.push(department.dep_name);
+        }
+    })
+}
+roleChoicesFunc();
+managerChoicesFunc();
+employeeChoicesFunc();
+departmentChoicesFunc();
+
+// Array of questions for inquirer prompt
 const mainMenu = [
     {
         type: 'list',
         name: 'mainMenu',
         message: 'What would you like to do?',
-        choices: ['Add Employee', 'Uppdate Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
+        choices: ['Add Employee', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
     }
 ]
 
-var roleChoices = [];
 const employeeQuestions = [
     {
         type: 'input',
@@ -44,15 +93,14 @@ const employeeQuestions = [
     {
         type: 'list',
         name: 'employeeRole',
-        messaeg: "What is the employee's role?",
+        message: "What is the employee's role?",
         choices: roleChoices
     },
     {
         type: 'list',
         name: 'employeeManager',
         message: "Who is the employee's manager?",
-        //need to update choices with queries
-        choices: ['John Doe', 'Mike Chan', 'Ashley Rodriguez', 'Kevin Tupik', 'Kunal Singh', 'Malia Brown']
+        choices: managerChoices
     }
 ]
 const updateRoleQuestions = [
@@ -60,22 +108,44 @@ const updateRoleQuestions = [
         type: 'list',
         name: 'whichEmployee',
         message: "Which employee's role would you like to update?",
-        //need to update choices with queries
-        choices: []
+        choices: employeeChoices
     },
     {
         type: 'list',
         name: 'whichRole',
         message: "Which role do you want to assign the selected employee?",
-        //need to update choices with queries
-        choices: []
+        choices: roleChoices
     }
 ]
-
+const addRoleQuestions = [
+    {
+        type: 'input',
+        name: 'nameRole',
+        message: 'What is the name of the role?'
+    },
+    {
+        type: 'input',
+        name: 'salaryRole',
+        message: 'What is the salary of the role?'
+    },
+    {
+        type: 'list',
+        name: 'departmentRole',
+        message: 'Which department does the role belong to?',
+        choices: departmentChoices
+    }
+]
+const addDepartmentQuestions = [
+    {
+        type: 'input',
+        name: 'newDepartment',
+        message: 'What is the name of the department?'
+    }
+]
 // A function to initialize the app
 function init() {
-    console.log('Employee Manager');
     console.log(' ');
+    console.log('Employee Manager');
 
     inquirer.prompt(mainMenu)
         .then((res) => {
@@ -90,39 +160,74 @@ function init() {
                     viewRole()
                     break;
                 case 'Add Role':
-                    addRole()
+                    promptAddRole()
                     break;
                 case 'View All Departments':
                     viewDepartment()
                     break;
                 case 'Add Department':
-                    addDepartment()
+                    promptAddDepartment()
             }
         })
 }
 
 //A function for the 'add employee' promt
 function promptEmployee() {
-    inquirer.prompt(employeeQuestions, db.query('SELECT title FROM emp_role;', function (err, results) {
-    
-            results.map(getRole);
-
-            function getRole(role) {
-                roleChoices.push(role.title);
-            }
-        }))
+    inquirer.prompt(employeeQuestions)
         .then((res) => {
             const employee = new Employee(res.employeeFirstName, res.employeeLastName, res.employeeRole, res.employeeManager);
             employee.addEmployee();
         })
+        .then(() => init() )
+        .catch(console.log)
 }
 
 //A function for the 'Update Employee Role' prompt
 function promptUpdateRole() {
     inquirer.prompt(updateRoleQuestions)
         .then((res) => {
-
+            // console.log(res.whichEmployee.split(' ').shift())
+            const employee = new Employee (res.whichEmployee.split(' ').shift(),res.whichEmployee.split(' ').shift(),res.whichRole);
+            employee.updateRole();
         })
+        .then(() => init() )
+        .catch(console.log)
+}
+function viewRole(){
+    db.promise().query('SELECT * FROM emp_role;')
+        .then(([rows,fields]) => {
+            console.table(rows);
+        })
+        .then( () => init())
+        .catch(console.log)
+        // .then( () => db.end());
+}
+function promptAddRole(){
+    inquirer.prompt(addRoleQuestions)
+        .then((res) => {
+            const role = new Role(res.nameRole, res.salaryRole, res.departmentRole);
+            role.addRole();
+        })
+        .then(() => init() )
+        .catch(console.log)
+}
+function viewDepartment(){
+    db.promise().query('SELECT * FROM department;')
+        .then(([rows,fields]) => {
+            console.table(rows);
+        })
+        .then( () => init())
+        .catch(console.log)
+        // .then( () => db.end());
+}
+function promptAddDepartment(){
+    inquirer.prompt(addDepartmentQuestions)
+        .then((res) => {
+            const department = new Department(res.newDepartment);
+            department.addDepartment();
+        })
+        .then(() =>init())
+        .catch(console.log)
 }
 // Function call to initialize app
 init();
