@@ -75,7 +75,7 @@ const mainMenu = [
         type: 'list',
         name: 'mainMenu',
         message: 'What would you like to do?',
-        choices: ['Add Employee', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
+        choices: ['View All Employees', 'Add Employee', 'Update Employee Role', 'View All Roles', 'Add Role', 'View All Departments', 'Add Department']
     }
 ]
 
@@ -150,6 +150,9 @@ function init() {
     inquirer.prompt(mainMenu)
         .then((res) => {
             switch (res.mainMenu) {
+                case 'View All Employees':
+                    viewEmployees()
+                    break;
                 case 'Add Employee':
                     promptEmployee()
                     break;
@@ -170,7 +173,16 @@ function init() {
             }
         })
 }
-
+//A function to view all employees
+function viewEmployees(){
+    db.promise().query('SELECT * FROM employee;')
+        .then(([rows,fields]) => {
+            console.table(rows);
+        })
+        .then( () => init())
+        .catch(console.log)
+//         // .then( () => db.end());
+}
 //A function for the 'add employee' promt
 function promptEmployee() {
     inquirer.prompt(employeeQuestions)
@@ -181,7 +193,6 @@ function promptEmployee() {
         .then(() => init() )
         .catch(console.log)
 }
-
 //A function for the 'Update Employee Role' prompt
 function promptUpdateRole() {
     inquirer.prompt(updateRoleQuestions)
@@ -193,6 +204,7 @@ function promptUpdateRole() {
         .then(() => init() )
         .catch(console.log)
 }
+// A function to view the company's roles
 function viewRole(){
     db.promise().query('SELECT * FROM emp_role;')
         .then(([rows,fields]) => {
@@ -202,6 +214,7 @@ function viewRole(){
         .catch(console.log)
         // .then( () => db.end());
 }
+// A function to add a company role
 function promptAddRole(){
     inquirer.prompt(addRoleQuestions)
         .then((res) => {
@@ -211,6 +224,7 @@ function promptAddRole(){
         .then(() => init() )
         .catch(console.log)
 }
+// A function to view the company's departments
 function viewDepartment(){
     db.promise().query('SELECT * FROM department;')
         .then(([rows,fields]) => {
@@ -220,6 +234,7 @@ function viewDepartment(){
         .catch(console.log)
         // .then( () => db.end());
 }
+//A function to add a company department
 function promptAddDepartment(){
     inquirer.prompt(addDepartmentQuestions)
         .then((res) => {
